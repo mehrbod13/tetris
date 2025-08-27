@@ -1,0 +1,49 @@
+SDL2_INC = -I./lib/SDL2-2.32.8/x86_64-w64-mingw32/include/SDL2 -I./lib/SDL2_ttf-2.24.0/x86_64-w64-mingw32/include/SDL2
+SDL2_LIB = -L./lib/SDL2-2.32.8/x86_64-w64-mingw32/lib -L./lib/SDL2_ttf-2.24.0/x86_64-w64-mingw32/lib
+
+# Web build 
+EMCC = emcc
+EMFLAGS = -O3 \
+  -s USE_SDL=2 \
+  -s USE_SDL_TTF=2 \
+  --preload-file fonts@/fonts \
+  -s ALLOW_MEMORY_GROWTH=1 \
+  -s ENVIRONMENT=web \
+  -s MODULARIZE=1 \
+  -s EXPORT_ES6=1 \
+  -s ASSERTIONS=0 \
+  -s SAFE_HEAP=0 \
+  --closure 1 \
+  --shell-file shell.html
+
+# Native build (windows)
+CC = cc
+CFLAGS = -O3 -Wall -Wextra $(SDL2_INC)
+LDFLAGS = $(SDL2_LIB) -lmingw32 -lSDL2main -lSDL2 -mwindows -lSDL2_ttf
+ 
+SRC = ./src/main.c
+DIST = ./dist
+STATIC = ./static
+OUT_WEB = $(STATIC)/index.html
+OUT_NATIVE = $(DIST)/tetris
+
+.PHONY: web native run clean
+
+native: $(OUT_NATIVE)
+
+web: $(OUT_WEB)
+
+run: $(OUT_NATIVE)
+	./$(OUT_NATIVE)
+
+$(OUT_WEB): $(SRC)
+	@mkdir -p $(DIST)
+	@mkdir -p $(STATIC)
+	$(EMCC) $(EMFLAGS) -o $@ $(SRC)
+
+$(OUT_NATIVE): $(SRC)
+	@mkdir -p $(DIST)
+	$(CC) $(CFLAGS) -o $@ $(SRC) $(LDFLAGS)
+
+clean:
+	rm -rf $(DIST) $(STATIC)
